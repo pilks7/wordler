@@ -1,71 +1,128 @@
 '''
-A wordle solver - takes (max 5) green and (max ?) yellow letters and prints all possible permutations.
-
-0. find wordlists.
-0.5. ability to choose wordlists (wordle, scrabble, OED...)
-1. take and sanitise a user input. loop until acceptable (with error message(s))
-1.5 take command line args
-2.
+A wordle solver - takes (max 5) green and (max 5) yellow letters and prints all possible permutations.
 '''
 
 import sys
 
-blanks = "*/.@&_-"
+blanks = "+._-"
 results = []
+banner = '''
+██╗    ██╗ ██████╗ ██████╗ ██████╗ ██╗     ███████╗██████╗ 
+██║    ██║██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝██╔══██╗
+██║ █╗ ██║██║   ██║██████╔╝██║  ██║██║     █████╗  ██████╔╝
+██║███╗██║██║   ██║██╔══██╗██║  ██║██║     ██╔══╝  ██╔══██╗
+╚███╔███╔╝╚██████╔╝██║  ██║██████╔╝███████╗███████╗██║  ██║
+ ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   
+
+'''
+hlp = f'''
+{banner}
+Welcome to wordler, a program to help you solve wordle problems.
+usage: wordler.py [--green] [--yellow] [--grey] [--help]
+
+--green <args> 	type green letters with wildcards ('+', '.', '_', '-'). Must be 5 characters
+--yellow <args> type yellow letters with wildcards ('+', '.', '_', '-'). Must be 5 characters
+--grey <args> 	type grey letters (any order, any amount, no wildcards)
+--help		prints this help screen
+
+
+'''
 
 def main():
-	# if len(sys.argv) > 1:
-	# 	args = sys.argv[1:]
-	# 	if --help in args:
-	# 		...
-	# 	elif 
-	# 		...
-	#else:
-		print("Program will prompt you for green letters (Known letter and position), then yellow (known letter but unknown position), and finally grey (Known not to be in word)")
-		print("===================================================================================================================================================================")
+	green = ""
+	yellow=""
+	grey=""
+
+	# dictionary = "wordle"
+
+	# if "-d" in sys.argv:
+	# 	idx = sys.argv.index("-d")
+	# 	try:
+	# 		dictionary = sys.argv[idx + 1]
+	# 	except IndexError:
+	# 		print("-d Requires a dictionary name. Options are: 'wordle' (default), OED")
+	# 		return
+
+	if "--green" in sys.argv:
+		idx = sys.argv.index("--green")
+		try:
+			green = sys.argv[idx + 1]
+		except IndexError:
+			print("--green requires an argument. E.G: 'S--G-'")
+			return
+	if "--yellow" in sys.argv:
+		idx = sys.argv.index("--yellow")
+		try:
+			yellow = sys.argv[idx + 1]
+		except IndexError:
+			print("--yellow requires an argument. E.G: 'S--G-'")
+			return
+	if "--grey" in sys.argv:
+		idx = sys.argv.index("--grey")
+		try:
+			grey = sys.argv[idx + 1]
+		except IndexError:
+			print("--grey requires an argument. E.G: 'KLXCCRW'")
+			return
+	if "--help" in sys.argv:
+		print(hlp)
+		return
+
+	print(banner)
+	print("Program will prompt you for green letters (Known letter and position), then yellow (known letter but unknown position), and finally grey (Known not to be in word)")
+	print("")
+	print("===================================================================================================================================================================")
+	print("")
+
+
+	while len(green) != 5:
 		green = input("Input green letters in correct order, using '*'', '/'', '-'' or '&' as blanks. Input should always be 5 characters long:  ").upper().replace(" ", "")
-		yellow = input("Enter yellow letters in any order. Should be no more than 5 letters:  ").upper().replace(" ", "")
+	while len(yellow) != 5:
+		yellow = input("Enter yellow letters in correct order, using '*'', '/'', '-'' or '&' as blanks. Input should always be 5 characters long:  ").upper().replace(" ", "")
+	
+	if not grey:
 		grey = input("Enter grey letters in any order. May be more than 5 letters:  ").upper().replace(" ", "")
 
-	with open("wordle-wordlist") as wordlist:
+	with open("wordle") as wordlist:
 		for word in wordlist:
-'''
-For each letter:
+			word = word.strip().upper()
+			if matches(word, green, yellow, grey):
+				results.append(word)
+	if results:
+		for result in sorted(results):
+			print(result)
+	else:
+		print("No matches found! Make sure you typed your letters correctly and try again.")
+		
 
-Minimum count
-= number of times it appears as green + yellow
+def matches(word, green, yellow, grey, debug=False):
 
-Maximum count
-
-If the letter ever appears as grey,
-then max count = minimum count
-
-Otherwise, max count is unbounded
-
-A candidate word is valid only if its count for that letter falls within those bounds.
-'''
-
-def matches(word, green, yellow, grey):
-	'''for j, gr in enumerate(grey):
-		if word[j] == gr and gr not in blanks:
-			return False'''
 	for letter in set(grey):
-		if green.count(letter) + yellow.count(letter) > word.count(letter):
+		if green.count(letter) + yellow.count(letter) != word.count(letter):
+			if debug:
+				print(word, "rejected by GREY rule:", letter)
 			return False
 
 	for l, y in enumerate(yellow):
-		if word[l] == y or y not in word:
+		if word[l] == y: #or y not in word:
+			if debug:
+				print(word, "rejected by YELLOW position:", y, "at", l)
 			return False
 
-	for letter in set(yellow):  
-		if green.count(letter) + yellow.count(letter) > word.count(letter):
+		if y not in word and y not in blanks:
+			if debug:
+				print(word, "rejected by YELLOW missing:", y)
 			return False
 
 	for i, g in enumerate(green):
 		if word[i] != g and g not in blanks:
+			if debug:
+				print(word, "rejected by GREEN rule:", g, "at", i)
 			return False
 
 	return True
+
+
 				
 if __name__ == "__main__":
 	main()
